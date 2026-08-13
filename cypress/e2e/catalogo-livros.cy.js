@@ -31,7 +31,7 @@ describe('Testes da Funcionalidade Catálogo de Livros', () => {
 
     // Objetivo: Validar que é possível obter detalhes de um livro específico pelo ID
     // Verificar que todos os campos do livro são retornados corretamente
-    it.only('GET - Deve obter detalhes de um livro específico', () => {
+    it('GET - Deve obter detalhes de um livro específico', () => {
         cy.api({
             method: 'GET',
             url: 'books/2',
@@ -85,18 +85,53 @@ describe('Testes da Funcionalidade Catálogo de Livros', () => {
     // Objetivo: Validar que um novo livro é adicionado com sucesso ao catálogo
     // Verificar que apenas admin pode adicionar novos livros (validação de permissão)
     it('POST - Deve cadastrar um novo livro com sucesso', () => {
-        //TODO: 
+        let titulo = `Jogos Mortais ${Date.now()}`;
+        cy.api({
+            method: 'POST',
+            url: 'books',
+            headers: {
+                'Authorization': token
+            },
+            body: {
+                "title": titulo,
+                "author": 'James Wan e Leigh Whannell',
+                "category": "Terror",
+                "total_copies": 3
+            }
+        }).should(response => {
+            expect(response.status).to.equal(201);
+            expect(response.body.book).to.have.property('id');
+            expect(response.body.book).to.have.property('title');
+            expect(response.body.book).to.have.property('author');
+            expect(response.body.book).to.have.property('category');
+        })
     });
 
     // Objetivo: Garantir que dados inválidos são rejeitados ao adicionar um livro
     // Validar mensagens de erro apropriadas para dados faltantes ou incorretos
     it('POST -  Deve rejeitar livro com dados inválidos', () => {
-        //TODO: 
+        cy.api({
+            method: 'POST',
+            url: 'books',
+            headers: {
+                'Authorization': token
+            },
+            failOnStatusCode: false,
+            body: {
+                "title": "",
+                "author": "James Wan e Leigh Whannell",
+                "category": "Terror",
+                "total_copies": 3
+            }
+        }).should(response => {
+            expect(response.status).to.equal(400);
+            expect(response.body.message).to.equal('\"title\" is not allowed to be empty');
+        })
     });
 
     // Objetivo: Validar que um livro pode ser atualizado com sucesso
     // Verificar que apenas admin pode atualizar livros (validação de permissão)
-    it('PUT - Deve atualizar um livro previamente cadastrado', () => {
+    it.only('PUT - Deve atualizar um livro previamente cadastrado', () => {
         //TODO: 
     });
 
