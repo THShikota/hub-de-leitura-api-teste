@@ -84,7 +84,7 @@ describe('Testes da Funcionalidade Catálogo de Livros', () => {
 
     // Objetivo: Validar que um novo livro é adicionado com sucesso ao catálogo
     // Verificar que apenas admin pode adicionar novos livros (validação de permissão)
-    it('POST - Deve cadastrar um novo livro com sucesso', () => {
+    /*it.only('POST - Deve cadastrar um novo livro com sucesso', () => {
         let titulo = `Jogos Mortais ${Date.now()}`;
         cy.api({
             method: 'POST',
@@ -105,6 +105,19 @@ describe('Testes da Funcionalidade Catálogo de Livros', () => {
             expect(response.body.book).to.have.property('author');
             expect(response.body.book).to.have.property('category');
         })
+    });*/
+
+    it.only('POST - Deve cadastrar um novo livro com sucesso', () => {
+        const titulo = `Jogos Mortais ${Date.now()}`;
+
+        cy.cadastrarLivro(token, titulo, 'James Wan e Leigh Whannell', 'Terror', 3).then((response) => {
+            expect(response.status).to.equal(201);
+            expect(response.body.book).to.have.property('id');
+            expect(response.body.book).to.have.property('title').and.equal(titulo);
+            expect(response.body.book).to.have.property('author').and.equal('James Wan e Leigh Whannell');
+            expect(response.body.book).to.have.property('category').and.equal('Terror');
+            expect(response.body.book).to.have.property('total_copies').and.equal(3);
+        });
     });
 
     // Objetivo: Garantir que dados inválidos são rejeitados ao adicionar um livro
@@ -131,7 +144,7 @@ describe('Testes da Funcionalidade Catálogo de Livros', () => {
 
     // Objetivo: Validar que um livro pode ser atualizado com sucesso
     // Verificar que apenas admin pode atualizar livros (validação de permissão)
-    it.only('PUT - Deve atualizar um livro previamente cadastrado', () => {
+    it('PUT - Deve atualizar um livro previamente cadastrado', () => {
         cy.api({
             method: 'PUT',
             url: 'books/28',
@@ -151,6 +164,6 @@ describe('Testes da Funcionalidade Catálogo de Livros', () => {
     // Objetivo: Validar que um livro pode ser removido do catálogo
     // Verificar que apenas admin pode deletar livros (validação de permissão)
     it('DELETE - Deve deletar um livro previamente cadastrado', () => {
-        //TODO: 
+
     });
 });
