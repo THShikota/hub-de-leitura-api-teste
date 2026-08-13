@@ -132,7 +132,20 @@ describe('Testes da Funcionalidade Catálogo de Livros', () => {
     // Objetivo: Validar que um livro pode ser atualizado com sucesso
     // Verificar que apenas admin pode atualizar livros (validação de permissão)
     it.only('PUT - Deve atualizar um livro previamente cadastrado', () => {
-        //TODO: 
+        cy.api({
+            method: 'PUT',
+            url: 'books/28',
+            headers: {
+                'Authorization': token
+            },
+            body: {
+                "title": "Jogos Mortais - Atualizado",
+                "author": "Autor Atualizado",
+            }
+        }).should(response => {
+            expect(response.status).to.equal(200);
+            expect(response.body.message).to.equal('Livro atualizado com sucesso.');
+        })
     });
 
     // Objetivo: Validar que um livro pode ser removido do catálogo
