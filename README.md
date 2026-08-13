@@ -1,116 +1,273 @@
-# 📚 Hub de Leitura — Testes Automatizados de API
+# 📚 Hub de Leitura --- Testes Automatizados de API
 
-Projeto desenvolvido para praticar e demonstrar a **automação de testes de API utilizando Cypress**.
+Projeto desenvolvido para praticar e demonstrar **automação de testes de
+API com Cypress** utilizando a API REST do **Hub de Leitura**,
+disponibilizada pela EBAC.
 
-Os testes foram realizados sobre a API do **Hub de Leitura**, disponibilizada pela **EBAC**, com foco nas funcionalidades relacionadas à **gestão de usuários**.
+A suíte atualmente cobre funcionalidades de **gestão de usuários** e
+**catálogo de livros**, incluindo autenticação, cenários positivos e
+negativos, filtros, validação de contratos de resposta e criação
+dinâmica de massa de dados.
 
-O projeto contempla diferentes operações HTTP, autenticação, validação de respostas e criação dinâmica de dados para tornar os testes mais independentes e reutilizáveis.
-
----
+------------------------------------------------------------------------
 
 ## 🚀 Tecnologias utilizadas
 
-* **JavaScript**
-* **Node.js**
-* **Cypress**
-* **cypress-plugin-api**
-* **API REST**
+-   JavaScript
+-   Node.js
+-   Cypress
+-   cypress-plugin-api
+-   API REST
 
----
+------------------------------------------------------------------------
 
 ## 🧪 Cenários automatizados
 
-Os testes estão organizados de acordo com os principais métodos HTTP utilizados pela API.
+### 👤 Gestão de usuários
 
-### GET — Consulta de usuários
+A suíte de usuários cobre operações `GET`, `POST`, `PUT` e `DELETE`, com
+validações de status code, conteúdo das respostas e cenários negativos.
 
-Foram implementados testes para:
+Entre os cenários implementados estão:
 
-* Listar usuários cadastrados;
-* Validar o status code da resposta;
-* Validar propriedades dos usuários retornados;
-* Buscar um usuário específico por ID;
-* Realizar consultas utilizando filtros e paginação.
+-   listagem e consulta de usuários;
+-   filtros e paginação;
+-   cadastro de usuários;
+-   validação de dados inválidos;
+-   atualização de usuários;
+-   exclusão de usuários;
+-   criação dinâmica de massa para reduzir dependência de dados fixos.
 
-### POST — Cadastro de usuários
+### 📖 Catálogo de livros
 
-Foram implementados cenários para:
+Também foram adicionados testes automatizados para o catálogo de livros.
 
-* Cadastrar um novo usuário com sucesso;
-* Gerar nome e e-mail dinamicamente durante a execução;
-* Validar o status code `201`;
-* Validar a mensagem retornada pela API;
-* Validar erro ao tentar cadastrar um usuário utilizando um e-mail em formato inválido.
+#### GET --- Listagem de livros
 
-### PUT — Atualização de usuários
+Valida:
 
-Os testes de atualização contemplam:
+-   status code `200`;
+-   retorno da lista de livros;
+-   filtros por categoria e autor;
+-   propriedades como `id`, `title`, `category` e `author`.
 
-* Atualização de um usuário existente;
-* Validação do status code `200`;
-* Validação da mensagem de sucesso;
-* Criação dinâmica de um usuário antes da atualização;
-* Utilização do ID retornado pela API para executar o teste sem depender de um usuário previamente cadastrado.
+Exemplo de filtros utilizados:
 
-### DELETE — Exclusão de usuários
+``` javascript
+qs: {
+    category: 'Ficção',
+    author: 'George Orwell'
+}
+```
 
-Foram implementados cenários para:
+#### GET --- Detalhes de um livro
 
-* Excluir usuários através do endpoint de remoção;
-* Criar um usuário dinamicamente antes da exclusão;
-* Utilizar o ID retornado no cadastro para realizar a remoção;
-* Validar o status code e a resposta da API.
+Valida a consulta de um livro específico pelo ID e a estrutura completa
+da resposta.
 
----
+A resposta é validada considerando os objetos:
+
+``` text
+response.body
+├── book
+├── availability
+└── statistics
+```
+
+Também são verificados campos e tipos importantes do livro, como:
+
+-   `id`;
+-   `title`;
+-   `author`;
+-   `isbn`;
+-   `pages`;
+-   `isAvailable`;
+-   `recent_reviews`.
+
+#### POST --- Cadastro de livro
+
+Valida que um administrador autenticado consegue cadastrar um novo
+livro.
+
+O título é criado dinamicamente com `Date.now()` para diminuir conflitos
+entre execuções:
+
+``` javascript
+const titulo = `Jogos Mortais ${Date.now()}`;
+```
+
+São validados:
+
+-   status code `201`;
+-   ID gerado;
+-   título;
+-   autor;
+-   categoria;
+-   quantidade total de cópias.
+
+#### POST --- Cadastro com dados inválidos
+
+Valida que a API rejeita dados inválidos, como um livro com título
+vazio.
+
+O teste utiliza:
+
+``` javascript
+failOnStatusCode: false
+```
+
+Isso permite validar intencionalmente respostas de erro da API, como:
+
+-   status code `400`;
+-   mensagem de validação retornada pelo backend.
+
+#### PUT --- Atualização de livro
+
+Valida que um administrador autenticado consegue atualizar os dados de
+um livro existente.
+
+São verificados:
+
+-   status code `200`;
+-   mensagem de sucesso retornada pela API.
+
+#### DELETE --- Exclusão dinâmica de livro
+
+O cenário de exclusão cria primeiro um livro exclusivamente para o teste
+e utiliza o ID retornado pelo cadastro para removê-lo.
+
+Fluxo:
+
+``` text
+Gerar token
+    ↓
+Cadastrar livro dinamicamente
+    ↓
+Obter ID do livro criado
+    ↓
+DELETE /books/{id}
+    ↓
+Validar status e mensagem
+```
+
+Essa abordagem evita depender de um ID fixo e reduz o risco de um teste
+remover dados utilizados por outros cenários.
+
+------------------------------------------------------------------------
 
 ## 🔐 Autenticação
 
-Para acessar os endpoints protegidos, o projeto realiza uma requisição ao endpoint de login antes da execução dos testes.
+Os endpoints protegidos exigem autenticação.
 
-Foi criado o comando customizado:
+Antes dos cenários que utilizam permissões administrativas, o projeto
+executa o comando:
 
-```javascript
-cy.geraToken(email, senha)
+``` javascript
+cy.geraToken('admin@biblioteca.com', 'admin123')
 ```
 
-O comando realiza a autenticação e retorna o token recebido pela API.
+O token retornado pelo endpoint de login é armazenado e enviado no
+header `Authorization`:
 
-Esse token é armazenado antes da execução dos cenários e posteriormente enviado no header `Authorization` das requisições que necessitam de autenticação.
+``` javascript
+headers: {
+    Authorization: token
+}
+```
 
----
+Exemplo do `beforeEach`:
 
-## ⚙️ Comandos customizados
+``` javascript
+let token
 
-O projeto utiliza **Custom Commands do Cypress** para reaproveitar ações utilizadas em diferentes cenários.
+beforeEach(() => {
+    cy.geraToken('admin@biblioteca.com', 'admin123').then(tkn => {
+        token = tkn
+    })
+})
+```
+
+------------------------------------------------------------------------
+
+## ⚙️ Custom Commands
+
+Os comandos customizados ficam em:
+
+``` text
+cypress/support/commands.js
+```
 
 ### `geraToken`
 
-Responsável por realizar o login e retornar o token de autenticação.
+Realiza o login e retorna o token de autenticação.
 
-```javascript
+``` javascript
 cy.geraToken(email, senha)
 ```
 
 ### `cadastrarUsuario`
 
-Responsável por cadastrar um usuário e retornar o seu ID.
+Cria um usuário para ser utilizado como massa de teste.
 
-```javascript
+``` javascript
 cy.cadastrarUsuario(nome, email, senha)
 ```
 
-Esse comando é utilizado principalmente nos testes dinâmicos de atualização e exclusão, reduzindo a dependência de dados previamente cadastrados na aplicação.
+O comando permite criar dados dinamicamente para cenários como
+atualização e exclusão.
 
----
+### `cadastrarLivro`
+
+Cria um livro autenticado para ser utilizado pelos testes do catálogo.
+
+``` javascript
+cy.cadastrarLivro(
+    token,
+    titulo,
+    autor,
+    categoria,
+    totalCopias
+)
+```
+
+Exemplo:
+
+``` javascript
+const titulo = `Livro para Deletar ${Date.now()}`
+
+cy.cadastrarLivro(
+    token,
+    titulo,
+    'Autor para Deletar',
+    'Categoria para Deletar',
+    1
+).then((responseCadastro) => {
+    const bookId = responseCadastro.body.book.id
+
+    cy.api({
+        method: 'DELETE',
+        url: `books/${bookId}`,
+        headers: {
+            Authorization: token
+        }
+    })
+})
+```
+
+O retorno do cadastro permite acessar o ID recém-criado e reutilizá-lo
+no mesmo fluxo de teste.
+
+------------------------------------------------------------------------
 
 ## 📁 Estrutura do projeto
 
-```text
+``` text
 hub-de-leitura-api-teste/
 │
 ├── cypress/
 │   ├── e2e/
-│   │   └── usuarios.cy.js
+│   │   ├── usuarios.cy.js
+│   │   └── catalogo-livros.cy.js
 │   │
 │   ├── fixtures/
 │   │   └── example.json
@@ -122,122 +279,135 @@ hub-de-leitura-api-teste/
 ├── cypress.config.js
 ├── package.json
 ├── package-lock.json
+├── README.md
 └── .gitignore
 ```
 
-### Principais arquivos
+### Arquivos principais
 
-**`cypress/e2e/usuarios.cy.js`**
-
+**`cypress/e2e/usuarios.cy.js`**\
 Contém os cenários automatizados relacionados à gestão de usuários.
 
-**`cypress/support/commands.js`**
+**`cypress/e2e/catalogo-livros.cy.js`**\
+Contém os cenários de listagem, consulta, cadastro, validação negativa,
+atualização e exclusão de livros.
 
-Contém os comandos customizados utilizados para autenticação e cadastro de usuários.
+**`cypress/support/commands.js`**\
+Centraliza comandos reutilizáveis para autenticação e criação de massa
+dinâmica.
 
-**`cypress.config.js`**
+**`cypress.config.js`**\
+Contém as configurações do Cypress, incluindo a URL base da API:
 
-Contém as configurações do Cypress, incluindo a URL base utilizada pelas requisições:
-
-```javascript
+``` javascript
 baseUrl: 'http://localhost:3000/api/'
 ```
 
----
+------------------------------------------------------------------------
 
-## ▶️ Como executar o projeto
+## ▶️ Como executar
 
 ### Pré-requisitos
 
-Antes de começar, é necessário possuir instalado:
+É necessário ter instalado:
 
-* [Node.js](https://nodejs.org/)
-* npm
+-   Node.js;
+-   npm;
+-   API do Hub de Leitura executando localmente.
 
-Também é necessário que a API do **Hub de Leitura** esteja sendo executada localmente.
+Por padrão, os testes esperam a API em:
 
-Por padrão, os testes esperam encontrar a API em:
-
-```text
+``` text
 http://localhost:3000/api/
 ```
 
-### 1. Clone este repositório
+### 1. Instale as dependências
 
-```bash
-git clone https://github.com/EBAC-QE/hub-de-leitura-api
-```
+Na pasta deste projeto de testes:
 
-### 2. Acesse a pasta do projeto
-
-```bash
-cd hub-de-leitura-api
-```
-
-### 3. Instale as dependências
-
-```bash
+``` bash
 npm install
 ```
 
-### 4. Inicie a API do Hub de Leitura
+### 2. Inicie a API
 
-Certifique-se de que a API disponibilizada pela EBAC esteja em execução na porta configurada no projeto.
+Execute o projeto da API do Hub de Leitura e confirme que ela está
+disponível na URL configurada no Cypress.
 
-### 5. Abra o Cypress
+### 3. Abra o Cypress
 
-```bash
+``` bash
 npx cypress open
 ```
 
-Selecione **E2E Testing** e execute o arquivo:
+Selecione **E2E Testing** e escolha uma das specs:
 
-```text
+``` text
 cypress/e2e/usuarios.cy.js
+cypress/e2e/catalogo-livros.cy.js
 ```
 
-Também é possível executar os testes diretamente pelo terminal:
+### 4. Execução em modo headless
 
-```bash
+Para executar toda a suíte pelo terminal:
+
+``` bash
 npx cypress run
 ```
 
----
+------------------------------------------------------------------------
 
 ## 💡 Conceitos praticados
 
-Durante o desenvolvimento deste projeto foram aplicados conceitos como:
+Durante o projeto foram aplicados conceitos como:
 
-* Automação de testes de API;
-* Testes de API REST com Cypress;
-* Requisições `GET`, `POST`, `PUT` e `DELETE`;
-* Validação de status codes;
-* Validação do body das respostas;
-* Autenticação via token;
-* Headers de autenticação;
-* Query parameters;
-* Cenários positivos e negativos;
-* Custom Commands do Cypress;
-* Criação dinâmica de massa de dados;
-* Reutilização de código;
-* Redução da dependência entre cenários de teste.
+-   automação de testes de API;
+-   API REST;
+-   métodos `GET`, `POST`, `PUT` e `DELETE`;
+-   validação de status codes;
+-   validação de propriedades e tipos do response body;
+-   autenticação via token;
+-   headers de autorização;
+-   query parameters;
+-   filtros e paginação;
+-   cenários positivos e negativos;
+-   `failOnStatusCode: false` para validação de erros esperados;
+-   Custom Commands do Cypress;
+-   criação dinâmica de massa de dados;
+-   encadeamento de requisições;
+-   reutilização do ID retornado por uma requisição;
+-   redução da dependência de IDs e registros fixos;
+-   testes mais independentes e reutilizáveis.
 
----
+------------------------------------------------------------------------
 
 ## 🎯 Objetivo do projeto
 
-O objetivo deste projeto é colocar em prática conceitos de **Quality Assurance e automação de testes de API**, utilizando o Cypress não apenas para testes de interface, mas também para realizar e validar requisições diretamente aos endpoints de uma API REST.
+O objetivo é aplicar conceitos de **Quality Assurance e automação de
+testes de API**, utilizando Cypress para enviar requisições diretamente
+aos endpoints e validar o comportamento da aplicação.
 
-A utilização de dados gerados dinamicamente e comandos customizados também busca tornar os testes mais reutilizáveis e menos dependentes do estado inicial da aplicação.
+A evolução da suíte busca aumentar a independência dos testes por meio
+da criação dinâmica de dados e da reutilização das respostas da própria
+API. Um exemplo é o cenário de exclusão de livros, no qual o teste cria
+um livro, captura seu ID e remove exatamente o registro criado durante a
+execução.
 
----
+------------------------------------------------------------------------
 
 ## 📌 Observações
 
-Este projeto possui finalidade **educacional** e foi desenvolvido a partir do **Hub de Leitura disponibilizado pela EBAC** para prática de testes e automação.
+Este projeto possui finalidade **educacional** e foi desenvolvido a
+partir do **Hub de Leitura disponibilizado pela EBAC** para prática de
+testes e automação.
 
----
+Alguns cenários ainda podem ser evoluídos para eliminar totalmente
+dependências de IDs fixos, criando a massa necessária durante a própria
+execução do teste.
+
+------------------------------------------------------------------------
 
 ## 👨‍💻 Autor
 
-Desenvolvido como projeto de estudos em **Quality Assurance e Automação de Testes**.
+Desenvolvido como projeto de estudos em **Quality Assurance e Automação
+de Testes**.
