@@ -66,5 +66,7 @@ Cypress.Commands.add('cadastrarLivro', (token, titulo, autor, categoria, totalCo
             category: categoria,
             total_copies: totalCopias
         }
-    });
+    }).then(response => {
+        expect(response.status).to.equal(201);
+    })
 });

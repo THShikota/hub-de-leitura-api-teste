@@ -84,30 +84,7 @@ describe('Testes da Funcionalidade Catálogo de Livros', () => {
 
     // Objetivo: Validar que um novo livro é adicionado com sucesso ao catálogo
     // Verificar que apenas admin pode adicionar novos livros (validação de permissão)
-    /*it.only('POST - Deve cadastrar um novo livro com sucesso', () => {
-        let titulo = `Jogos Mortais ${Date.now()}`;
-        cy.api({
-            method: 'POST',
-            url: 'books',
-            headers: {
-                'Authorization': token
-            },
-            body: {
-                "title": titulo,
-                "author": 'James Wan e Leigh Whannell',
-                "category": "Terror",
-                "total_copies": 3
-            }
-        }).should(response => {
-            expect(response.status).to.equal(201);
-            expect(response.body.book).to.have.property('id');
-            expect(response.body.book).to.have.property('title');
-            expect(response.body.book).to.have.property('author');
-            expect(response.body.book).to.have.property('category');
-        })
-    });*/
-
-    it.only('POST - Deve cadastrar um novo livro com sucesso', () => {
+    it('POST - Deve cadastrar um novo livro com sucesso', () => {
         const titulo = `Jogos Mortais ${Date.now()}`;
 
         cy.cadastrarLivro(token, titulo, 'James Wan e Leigh Whannell', 'Terror', 3).then((response) => {
@@ -164,6 +141,19 @@ describe('Testes da Funcionalidade Catálogo de Livros', () => {
     // Objetivo: Validar que um livro pode ser removido do catálogo
     // Verificar que apenas admin pode deletar livros (validação de permissão)
     it('DELETE - Deve deletar um livro previamente cadastrado', () => {
-
+        const titulo = `Livro para Deletar ${Date.now()}`;
+        cy.cadastrarLivro(token, titulo, 'Autor para Deletar', 'Categoria para Deletar', 1).then((responseCadastro) => {
+            const bookId = responseCadastro.body.book.id;
+            cy.api({
+                method: 'DELETE',
+                url: `books/${bookId}`,
+                headers: {
+                    Authorization: token
+                }
+            });
+        }).should((response) => {
+            expect(response.status).to.equal(200);
+            expect(response.body.message).to.equal('Livro deletado com sucesso.');
+        });
     });
 });
