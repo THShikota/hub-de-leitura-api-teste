@@ -122,21 +122,25 @@ describe('Testes da Funcionalidade Catálogo de Livros', () => {
     // Objetivo: Validar que um livro pode ser atualizado com sucesso
     // Verificar que apenas admin pode atualizar livros (validação de permissão)
     it('PUT - Deve atualizar um livro previamente cadastrado', () => {
-        cy.api({
-            method: 'PUT',
-            url: 'books/28',
-            headers: {
-                'Authorization': token
-            },
-            body: {
-                "title": "Jogos Mortais - Atualizado",
-                "author": "Autor Atualizado",
-            }
-        }).should(response => {
-            expect(response.status).to.equal(200);
-            expect(response.body.message).to.equal('Livro atualizado com sucesso.');
+        const titulo = `Livro para Atualizar ${Date.now()}`;
+        cy.cadastrarLivro(token, titulo, 'Autor para Atualizar', 'Categoria para Atualizar', 1).then((responseCadastro) => {
+            const bookId = responseCadastro.body.book.id;
+            cy.api({
+                method: 'PUT',
+                url: `books/${bookId}`,
+                headers: {
+                    'Authorization': token
+                },
+                body: {
+                    "title": "Jogos Mortais - Atualizado",
+                    "author": "Autor Atualizado",
+                }
+            }).should(response => {
+                expect(response.status).to.equal(200);
+                expect(response.body.message).to.equal('Livro atualizado com sucesso.');
+            });
         })
-    });
+    })
 
     // Objetivo: Validar que um livro pode ser removido do catálogo
     // Verificar que apenas admin pode deletar livros (validação de permissão)
